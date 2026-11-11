@@ -38,7 +38,54 @@ Pra manter a regra de consistência, toda mensagem do diagrama de sequência bat
 ## 3. Diagramas
 
 ### 3.1 Diagrama de Sequência
-docs/diagrams/atividades.mmd
+```mermaid
+flowchart TB
+    subgraph R1["Raia 1 - Industria Vendedora"]
+        A0((Inicio)) --> A1[Acessar Publicar Nova Oferta]
+        A1 --> A2[Preencher material, quantidade, preco/permuta e frete]
+        A2 --> A3[Confirmar envio]
+        A9[Fazer upload de laudo e FDS]
+        AR[Renovar licenca no UC01]
+        AF((Fim))
+    end
+
+    subgraph R2["Raia 2 - Sistema Back-End"]
+        B1{Licenca vigente?}
+        B2[Classificar residuo NBR 10004]
+        FORK[/"===== FORK ====="/]
+        B3[Gerar miniaturas das fotos]
+        B4[Indexar geolocalizacao PostGIS]
+        JOIN[/"===== JOIN ====="/]
+        B5{Classe do residuo?}
+        B6[Gerar URL de upload]
+        B7[Publicar evento LaudoAnexado]
+        B8[Enviar oferta para moderacao]
+        B9[Gerar codigo unico e notificar]
+    end
+
+    subgraph R3["Raia 3 - Servicos Externos"]
+        C1[SINIR valida codigo IBAMA]
+        C2[Worker valida laudo e FDS]
+        C3{Laudo valido?}
+    end
+
+    A3 --> B1
+    B1 -- "[licencaVigente == false]" --> AR --> AF
+    B1 -- "[licencaVigente == true]" --> B2
+    B2 --> FORK
+    FORK --> C1
+    FORK --> B3
+    FORK --> B4
+    C1 --> JOIN
+    B3 --> JOIN
+    B4 --> JOIN
+    JOIN --> B5
+    B5 -- "[classe == I]" --> B6 --> A9 --> B7 --> C2 --> C3
+    B5 -- "[classe == IIA ou classe == IIB]" --> B8
+    C3 -- "[laudoValido == true]" --> B8
+    C3 -- "[laudoValido == false]" --> A9
+    B8 --> B9 --> AF
+```
 
 ### 3.2 Diagrama de Atividades com Raias
 (conteúdo de docs/diagrams/atividades.mmd)
