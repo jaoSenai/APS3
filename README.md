@@ -41,7 +41,7 @@ Pra manter a regra de consistência, toda mensagem do diagrama de sequência bat
 (conteúdo de docs/diagrams/sequencia.mmd)
 
 ### 3.2 Diagrama de Atividades com Raias
-(conteúdo de docs/diagrams/atividades.mmd)
+(conteúdo de APS3/ documentos/ diagramas/atividades.mmd)
 
 ### 3.3 Máquina de Estados da Oferta
 (conteúdo de docs/diagrams/estados.mmd)
