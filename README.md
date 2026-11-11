@@ -191,9 +191,6 @@ stateDiagram-v2
 ```
 
 ### 3.4 C4 Nível 2 — Contêineres
-### 🏗️ Diagrama C4 - Nível 2 (Contêineres)
-
-Para este diagrama de arquitetura do Marketplace B2B de Sobras, estamos utilizando a especificação do C4 Model.
 
 ```plantuml
 @startuml C4_Container_PublicarOferta
