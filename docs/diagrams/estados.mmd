@@ -1,0 +1,38 @@
+stateDiagram-v2
+    [*] --> Rascunho
+
+    Rascunho : entry / iniciarFormulario()
+    Rascunho : exit / salvarDados()
+
+    Rascunho --> Classificando : publicar() [licencaVigente] / classificarResiduo()
+    Rascunho --> Bloqueada : publicar() [not licencaVigente] / alertarRenovacao()
+    Bloqueada --> Rascunho : licencaRenovada
+
+    Classificando : do / consultarSinir()
+    Classificando --> AguardandoLaudo : classificado [classeI] / gerarUrlUpload()
+    Classificando --> AguardandoModeracao : classificado [classeII] / enviarParaModeracao()
+
+    AguardandoLaudo : entry / notificar("anexe laudo e FDS")
+    AguardandoLaudo --> ValidandoLaudo : anexarLaudo(url) / publicarEvento()
+    ValidandoLaudo --> AguardandoLaudo : laudoInvalido / notificar("laudo recusado")
+    ValidandoLaudo --> AguardandoModeracao : laudoValido / enviarParaModeracao()
+
+    AguardandoModeracao : entry / notificarModerador()
+    AguardandoModeracao --> Ativa : aprovar() / indexarCatalogo()
+    AguardandoModeracao --> Rejeitada : rejeitar(motivo) / notificarVendedora()
+
+    state Ativa {
+        [*] --> Disponivel
+        Disponivel --> EmNegociacao : interesseAceito
+        EmNegociacao --> Disponivel : negociacaoEncerrada [quantidade > 0]
+    }
+    Ativa : entry / exibirNoCatalogo()
+
+    Ativa --> Pausada : pausar()
+    Pausada --> Ativa : reativar() [licencaVigente]
+    Ativa --> Concluida : loteVendido [quantidade == 0] / encerrar()
+    Ativa --> Expirada : prazoVencido / removerDoCatalogo()
+
+    Rejeitada --> [*]
+    Concluida --> [*]
+    Expirada --> [*]
