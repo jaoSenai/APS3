@@ -192,40 +192,54 @@ stateDiagram-v2
 
 ### 3.4 C4 Nível 2 — Contêineres
 
-```plantuml
-@startuml C4_Container_PublicarOferta
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+```mermaid
+flowchart TB
+    %% Definição das Pessoas (Atores)
+    vendedora([👤 Industria Vendedora<br/><i>Publica sobras e anexa laudos</i>])
+    moderador([👤 Moderador<br/><i>Aprova ou rejeita ofertas</i>])
 
-title C4 Nivel 2 - Conteineres - Publicar Oferta (Marketplace B2B de Sobras)
+    %% Limite do Sistema Central
+    subgraph mkt [Marketplace B2B de Sobras]
+        web["💻 Frontend Web<br/><i>Next.js 14 / React</i><br/><hr/>Formulario de oferta e upload de laudo"]
+        api["⚙️ API de Catalogo<br/><i>Spring Boot 3 / Java 21</i><br/><hr/>OfertaController, OfertaService, ClassificacaoService"]
+        worker["⚙️ Validador de Laudo<br/><i>Spring Boot 3 Worker</i><br/><hr/>Consome eventos e valida laudo/FDS"]
+        broker[["📥 Broker de Eventos<br/><i>RabbitMQ 3.13</i><br/><hr/>Fila laudo.anexado"]]
+        db[("🗄️ Banco Principal<br/><i>PostgreSQL 16 + PostGIS</i><br/><hr/>Ofertas, materiais, classificacoes")]
+        storage[("📂 Armazenamento de Laudos<br/><i>MinIO (S3 compativel)</i><br/><hr/>PDFs de laudo e FDS")]
+    end
 
-Person(vendedora, "Industria Vendedora", "Publica sobras e anexa laudos")
-Person(moderador, "Moderador", "Aprova ou rejeita ofertas")
+    %% Sistemas Externos
+    sinir["🏢 SINIR / MTR<br/><i>Sistema Externo</i><br/><hr/>Valida codigo IBAMA do residuo"]
+    receita["🏢 API CNPJ<br/><i>Sistema Externo</i><br/><hr/>Regularidade da empresa"]
 
-System_Boundary(mkt, "Marketplace B2B de Sobras") {
-    Container(web, "Frontend Web", "Next.js 14 / React", "Formulario de oferta e upload de laudo")
-    Container(api, "API de Catalogo", "Spring Boot 3 / Java 21", "OfertaController, OfertaService, ClassificacaoService")
-    Container(worker, "Validador de Laudo", "Spring Boot 3 Worker", "Consome eventos e valida laudo/FDS")
-    ContainerQueue(broker, "Broker de Eventos", "RabbitMQ 3.13", "Fila laudo.anexado")
-    ContainerDb(db, "Banco Principal", "PostgreSQL 16 + PostGIS", "Ofertas, materiais, classificacoes")
-    ContainerDb(storage, "Armazenamento de Laudos", "MinIO (S3 compativel)", "PDFs de laudo e FDS")
-}
+    %% Relacionamentos e Conexões
+    vendedora -->|Usa / HTTPS| web
+    moderador -->|Modera / HTTPS| web
+    web -->|Chama / REST/JSON sobre HTTPS| api
+    web -->|Envia laudo / HTTPS PUT URL pre-assinada| storage
+    api -->|Le e grava / JDBC/SQL| db
+    api -->|Valida codigo IBAMA / REST/HTTPS| sinir
+    api -->|Consulta CNPJ / REST/HTTPS| receita
+    api -->|Publica LaudoAnexadoEvent / AMQP 0-9-1| broker
+    broker -->|Entrega evento / AMQP 0-9-1| worker
+    worker -->|Le arquivo / S3 API/HTTPS| storage
+    worker -->|Atualiza status da oferta / JDBC/SQL| db
 
-System_Ext(sinir, "SINIR / MTR", "Valida codigo IBAMA do residuo")
-System_Ext(receita, "API CNPJ", "Regularidade da empresa")
+    %% Estilização Padrão C4 Model (Cores)
+    style vendedora fill:#08427B,stroke:#052E56,color:#FFF
+    style moderador fill:#08427B,stroke:#052E56,color:#FFF
+    
+    style web fill:#1168BD,stroke:#0B4E8F,color:#FFF
+    style api fill:#1168BD,stroke:#0B4E8F,color:#FFF
+    style worker fill:#1168BD,stroke:#0B4E8F,color:#FFF
+    style broker fill:#1168BD,stroke:#0B4E8F,color:#FFF
+    style db fill:#1168BD,stroke:#0B4E8F,color:#FFF
+    style storage fill:#1168BD,stroke:#0B4E8F,color:#FFF
 
-Rel(vendedora, web, "Usa", "HTTPS")
-Rel(moderador, web, "Modera", "HTTPS")
-Rel(web, api, "Chama", "REST/JSON sobre HTTPS")
-Rel(web, storage, "Envia laudo", "HTTPS PUT URL pre-assinada")
-Rel(api, db, "Le e grava", "JDBC/SQL")
-Rel(api, sinir, "Valida codigo IBAMA", "REST/HTTPS")
-Rel(api, receita, "Consulta CNPJ", "REST/HTTPS")
-Rel(api, broker, "Publica LaudoAnexadoEvent", "AMQP 0-9-1")
-Rel(broker, worker, "Entrega evento", "AMQP 0-9-1")
-Rel(worker, storage, "Le arquivo", "S3 API/HTTPS")
-Rel(worker, db, "Atualiza status da oferta", "JDBC/SQL")
-
-@enduml
+    style sinir fill:#999999,stroke:#666666,color:#FFF
+    style receita fill:#999999,stroke:#666666,color:#FFF
+    
+    style mkt fill:none,stroke:#B3B3B3,stroke-width:2px,stroke-dasharray: 5 5,color:#333
 ```
 
 
