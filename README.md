@@ -192,7 +192,7 @@ stateDiagram-v2
 
 ### 3.4 C4 Nível 2 — Contêineres
 ```mermaid
- @startuml C4_Container_PublicarOferta
+@startuml C4_Container_PublicarOferta
 !include [raw.githubusercontent.com](https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml)
 
 title C4 Nivel 2 - Conteineres - Publicar Oferta (Marketplace B2B de Sobras)
