@@ -38,7 +38,7 @@ Pra manter a regra de consistência, toda mensagem do diagrama de sequência bat
 ## 3. Diagramas
 
 ### 3.1 Diagrama de Sequência
-documentos/ diagramas /atividades.mmd
+docs/diagrams/atividades.mmd
 
 ### 3.2 Diagrama de Atividades com Raias
 (conteúdo de docs/diagrams/atividades.mmd)
