@@ -191,7 +191,8 @@ stateDiagram-v2
 ```
 
 ### 3.4 C4 Nível 2 — Contêineres
-`@startuml C4_Container_PublicarOferta
+```mermaid
+ @startuml C4_Container_PublicarOferta
 !include [raw.githubusercontent.com](https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml)
 
 title C4 Nivel 2 - Conteineres - Publicar Oferta (Marketplace B2B de Sobras)
@@ -224,7 +225,7 @@ Rel(worker, storage, "Le arquivo", "S3 API/HTTPS")
 Rel(worker, db, "Atualiza status da oferta", "JDBC/SQL")
 
 @enduml
-` 
+```
 
 ### 3.5 ADR
 Ver `docs/architecture/adr-0001.md`.
