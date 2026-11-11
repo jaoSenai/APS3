@@ -244,7 +244,10 @@ flowchart TB
 
 
 ### 3.5 ADR
-Ver docs/architecture/adr-0001.md
+### 3.5 ADR
+
+Veja o documento detalhado em [docs/architecture/adr-0001.md](./docs/architecture/adr-0001.md).
+
 
 ## 4. Como os modelos conversam entre si
 
