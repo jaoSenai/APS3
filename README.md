@@ -39,6 +39,67 @@ Pra manter a regra de consistência, toda mensagem do diagrama de sequência bat
 
 ### 3.1 Diagrama de Sequência
 ```mermaid
+sequenceDiagram
+    autonumber
+    actor V as Vendedora
+    participant FE as Frontend Web
+    participant C as OfertaController
+    participant S as OfertaService
+    participant E as Empresa
+    participant L as LicencaAmbiental
+    participant CL as ClassificacaoService
+    participant M as Material
+    participant SN as SinirClient
+    participant O as Oferta
+    participant ST as LaudoStorage
+    participant B as EventBroker
+    participant W as ValidadorLaudoWorker
+    participant N as NotificacaoService
+
+    V->>FE: preencher formulario e confirmar
+    FE->>C: publicarOferta(NovaOfertaDTO)
+    C->>S: publicar(NovaOfertaDTO, empresaId)
+    S->>E: obterLicencaAtiva()
+    E-->>S: LicencaAmbiental
+    S->>L: isVigente()
+    L-->>S: Boolean
+
+    alt licenca vencida
+        S-->>C: ErroDTO(LICENCA_VENCIDA)
+        C-->>FE: 422 ErroDTO
+        FE-->>V: alerta de renovacao (redireciona UC01)
+    else licenca vigente
+        S->>CL: classificar(materialId)
+        CL->>M: isResiduoPerigoso()
+        M-->>CL: Boolean
+        CL->>SN: validarCodigoIbama(codigo)
+        SN-->>CL: ResultadoIbamaDTO
+        CL-->>S: ClassificacaoDTO
+
+        alt Classe I (perigoso)
+            S->>ST: gerarUrlUpload(ofertaId)
+            ST-->>S: UploadUrlDTO
+            S-->>C: OfertaCriadaDTO(status=AGUARDANDO_LAUDO)
+            C-->>FE: 201 OfertaCriadaDTO + UploadUrlDTO
+            FE->>ST: upload laudo e FDS (URL pre-assinada)
+            FE->>O: anexarLaudo(url)
+            O-)B: publicarEvento(LaudoAnexadoEvent)
+            B-)W: consumir(LaudoAnexadoEvent)
+            W->>O: enviarParaModeracao()
+            W-)N: notificar(empresaId, "laudo recebido")
+        else Classe IIA ou IIB
+            S->>O: enviarParaModeracao()
+            S-->>C: OfertaCriadaDTO(status=AGUARDANDO_MODERACAO)
+            C-->>FE: 201 OfertaCriadaDTO
+            S-)N: notificar(empresaId, "oferta enviada")
+        end
+        FE-->>V: codigo unico do lote exibido
+    end
+
+```
+
+### 3.2 Diagrama de Atividades com Raias
+``` mermaid
 flowchart TB
     subgraph R1["Raia 1 - Industria Vendedora"]
         A0((Inicio)) --> A1[Acessar Publicar Nova Oferta]
@@ -87,11 +148,47 @@ flowchart TB
     B8 --> B9 --> AF
 ```
 
-### 3.2 Diagrama de Atividades com Raias
-(conteúdo de docs/diagrams/atividades.mmd)
-
 ### 3.3 Máquina de Estados da Oferta
-(conteúdo de docs/diagrams/estados.mmd)
+``` mermaid
+stateDiagram-v2
+    [*] --> Rascunho
+
+    Rascunho : entry / iniciarFormulario()
+    Rascunho : exit / salvarDados()
+
+    Rascunho --> Classificando : publicar() [licencaVigente] / classificarResiduo()
+    Rascunho --> Bloqueada : publicar() [not licencaVigente] / alertarRenovacao()
+    Bloqueada --> Rascunho : licencaRenovada
+
+    Classificando : do / consultarSinir()
+    Classificando --> AguardandoLaudo : classificado [classeI] / gerarUrlUpload()
+    Classificando --> AguardandoModeracao : classificado [classeII] / enviarParaModeracao()
+
+    AguardandoLaudo : entry / notificar("anexe laudo e FDS")
+    AguardandoLaudo --> ValidandoLaudo : anexarLaudo(url) / publicarEvento()
+    ValidandoLaudo --> AguardandoLaudo : laudoInvalido / notificar("laudo recusado")
+    ValidandoLaudo --> AguardandoModeracao : laudoValido / enviarParaModeracao()
+
+    AguardandoModeracao : entry / notificarModerador()
+    AguardandoModeracao --> Ativa : aprovar() / indexarCatalogo()
+    AguardandoModeracao --> Rejeitada : rejeitar(motivo) / notificarVendedora()
+
+    state Ativa {
+        [*] --> Disponivel
+        Disponivel --> EmNegociacao : interesseAceito
+        EmNegociacao --> Disponivel : negociacaoEncerrada [quantidade > 0]
+    }
+    Ativa : entry / exibirNoCatalogo()
+
+    Ativa --> Pausada : pausar()
+    Pausada --> Ativa : reativar() [licencaVigente]
+    Ativa --> Concluida : loteVendido [quantidade == 0] / encerrar()
+    Ativa --> Expirada : prazoVencido / removerDoCatalogo()
+
+    Rejeitada --> [*]
+    Concluida --> [*]
+    Expirada --> [*]
+```
 
 ### 3.4 C4 Nível 2 — Contêineres
 Código em `docs/architecture/workspace.dsl` (C4-PlantUML).
